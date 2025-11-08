@@ -1,5 +1,8 @@
-const BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000/api";
- console.log("API BASE:", BASE);
+const BASE = import.meta.env.VITE_API_BASE;
+if (!BASE) {
+  throw new Error("VITE_API_BASE environment variable is not set");
+}
+console.log("API BASE:", BASE);
 export const api = {
   async listProducts() {
     const res = await fetch(`${BASE}/products`);
