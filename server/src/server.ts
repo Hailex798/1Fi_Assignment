@@ -1,0 +1,14 @@
+import "dotenv/config";
+import app from "./app";
+import { connectDB } from "./config/db";
+
+const PORT = process.env.PORT || 4000;
+const MONGO_URI = process.env.MONGO_URI!;
+
+
+console.log("Starting server...");
+console.log(`Connecting to MongoDB at ${MONGO_URI}...`);
+(async () => {
+    await connectDB(MONGO_URI);
+    app.listen(PORT, () => console.log(`🚀 API http://localhost:${PORT}`));
+})();
