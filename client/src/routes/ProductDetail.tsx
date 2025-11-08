@@ -159,7 +159,7 @@ export default function ProductDetail() {
   const calculatedPlans = getCalculatedPlans();
 
   // Debug: Log calculations for testing
-  if (process.env.NODE_ENV === 'development' && selectedVariant) {
+  if (import.meta.env.MODE === 'development' && selectedVariant) {
     console.log('EMI Calculations:', {
       productPrice: selectedVariant.price,
       downpayment,
