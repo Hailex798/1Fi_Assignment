@@ -11,7 +11,7 @@ const router = createBrowserRouter([
     path: "/",
     element: <App />,
     children: [
-      { index: true, element: <Navigate to="/products/apple-iphone-17-pro" replace /> },
+      { index: true, element: <Navigate to="/mobiles" replace /> },
       { path: "mobiles", element: <ProductsList /> },
       { path: "electronics", element: <div className="p-8 text-center text-gray-500">Electronics section coming soon</div> },
       { path: "tv-appliances", element: <div className="p-8 text-center text-gray-500">TV & Appliances section coming soon</div> },

@@ -14,87 +14,22 @@ export default function ProductDetail() {
     plans: EMIPlan[];
   }>({ product: null, selectedVariantId: null, plans: [] });
 
-  const [err, setErr] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [downpayment, setDownpayment] = useState(20245);
+  const [downpayment, setDownpayment] = useState(0);
   const [customDownpayment, setCustomDownpayment] = useState("");
 
   const variantIdParam = sp.get("variantId") || undefined;
 
-  // Fallback data for demo purposes when API is not available
-  const fallbackData = {
-    product: {
-      _id: "demo-iphone-17-pro",
-      name: "Apple iPhone 17 Pro (Silver, 256 GB)",
-      brand: "Apple",
-      slug: "apple-iphone-17-pro",
-      description: "The most advanced iPhone yet with titanium design and A17 Pro chip",
-      variants: [
-        {
-          _id: "variant-256gb-silver",
-          name: "256 GB, Silver",
-          mrp: 149900,
-          price: 134900,
-          images: ["https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=400&fit=crop"]
-        },
-        {
-          _id: "variant-512gb-silver",
-          name: "512 GB, Silver",
-          mrp: 169900,
-          price: 154900,
-          images: ["https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&h=400&fit=crop"]
-        }
-      ]
-    },
-    selectedVariantId: "variant-256gb-silver",
-    plans: [
-      {
-        _id: "plan-3m",
-        tenureMonths: 3,
-        interestAPR: 0,
-        monthlyAmount: 38221,
-        cashback: 0,
-        provider: "Snapmint"
-      },
-      {
-        _id: "plan-6m",
-        tenureMonths: 6,
-        interestAPR: 1.73,
-        monthlyAmount: 21442,
-        cashback: 0,
-        provider: "Snapmint"
-      },
-      {
-        _id: "plan-9m",
-        tenureMonths: 9,
-        interestAPR: 1.88,
-        monthlyAmount: 15281,
-        cashback: 0,
-        provider: "Snapmint"
-      },
-      {
-        _id: "plan-12m",
-        tenureMonths: 12,
-        interestAPR: 1.89,
-        monthlyAmount: 12106,
-        cashback: 0,
-        provider: "Snapmint"
-      }
-    ]
-  };
-
-  // Use fallback data if API fails or no data
-  const currentData = (err || !data.product) ? fallbackData : data;
-  const currentSelectedVariantId = (err || !data.selectedVariantId) ? fallbackData.selectedVariantId : data.selectedVariantId;
-
   const selectedVariant: Variant | null = useMemo(() => {
-    if (!currentData.product || !currentSelectedVariantId) return null;
-    return currentData.product.variants.find(v => v._id === currentSelectedVariantId) || null;
-  }, [currentData, currentSelectedVariantId]);
+    if (!data.product || !data.selectedVariantId) return null;
+    return data.product.variants.find((v: Variant) => v._id === data.selectedVariantId) || null;
+  }, [data.product, data.selectedVariantId]);
 
   useEffect(() => {
     if (!slug) return;
+    setIsLoading(true);
     api.getProduct(slug, variantIdParam)
       .then((res) => {
         setData({
@@ -106,7 +41,7 @@ export default function ProductDetail() {
         if (res.emiPlans.length > 0) {
           setSelectedPlanId(res.emiPlans[0]._id);
         }
-        // Reset downpayment when product changes
+        // Set initial downpayment when product loads
         if (res.product && res.product.variants.length > 0) {
           const variant = res.product.variants.find((v: Variant) => v._id === res.selectedVariantId);
           if (variant) {
@@ -115,7 +50,12 @@ export default function ProductDetail() {
           }
         }
       })
-      .catch((e) => setErr(e.message));
+      .catch((error) => {
+        console.error("Failed to load product:", error);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, [slug, variantIdParam]);
 
   // Reset downpayment when variant changes
@@ -127,7 +67,7 @@ export default function ProductDetail() {
     }
   }, [selectedVariant]);
 
-  if (!currentData.product || !selectedVariant) return <Loading />;
+  if (isLoading || !data.product || !selectedVariant) return <Loading />;
 
   const image = selectedVariant.images[0];
 
@@ -148,7 +88,7 @@ export default function ProductDetail() {
 
   const getCalculatedPlans = () => {
     const financeAmount = getFinanceAmount();
-    return currentData.plans.map(plan => ({
+    return data.plans.map((plan: EMIPlan) => ({
       ...plan,
       calculatedMonthlyAmount: calculateEMI(financeAmount, plan.interestAPR, plan.tenureMonths),
       totalAmount: financeAmount,
@@ -222,9 +162,9 @@ export default function ProductDetail() {
           <span>&gt;</span>
           <span className="whitespace-nowrap">Smart Phones</span>
           <span>&gt;</span>
-          <span className="whitespace-nowrap">{currentData.product.brand}</span>
-          <span className="hidden sm:inline">&gt;</span>
-          <span className="text-gray-900 truncate hidden sm:inline">{currentData.product.name}</span>
+          <span className="whitespace-nowrap">{data.product.brand}</span>
+          <span>&gt;</span>
+          <span className="text-gray-900 truncate hidden sm:inline">{data.product.name}</span>
         </div>
       </div>
 
@@ -237,7 +177,7 @@ export default function ProductDetail() {
               <div className="bg-gray-50 rounded-lg p-4 sm:p-8 flex items-center justify-center mb-4">
                 <img
                   src={image}
-                  alt={currentData.product.name}
+                  alt={data.product.name}
                   className="max-w-full max-h-64 sm:max-h-80 object-contain"
                 />
               </div>
@@ -286,7 +226,7 @@ export default function ProductDetail() {
                 <div className="bg-gray-50 rounded-lg p-8 flex items-center justify-center">
                   <img
                     src={image}
-                    alt={currentData.product.name}
+                    alt={data.product.name}
                     className="max-w-full max-h-96 object-contain"
                   />
                 </div>
@@ -309,9 +249,9 @@ export default function ProductDetail() {
                     const variantId = e.target.value;
                     if (variantId) onVariantChange(variantId);
                   }}
-                  value={currentSelectedVariantId || ''}
+                  value={data.selectedVariantId || ''}
                 >
-                  {currentData.product.variants.map(variant => (
+                  {data.product.variants.map((variant: Variant) => (
                     <option key={variant._id} value={variant._id}>
                       {variant.name}
                     </option>
@@ -323,7 +263,7 @@ export default function ProductDetail() {
 
           {/* Right side - Product details */}
           <div className="order-2">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">{currentData.product.name}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">{data.product.name}</h1>
             <p className="text-sm sm:text-base text-gray-600 mb-4">({selectedVariant.name})</p>
 
             <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">₹{selectedVariant.price.toLocaleString()}</div>
@@ -344,9 +284,9 @@ export default function ProductDetail() {
                     const variantId = e.target.value;
                     if (variantId) onVariantChange(variantId);
                   }}
-                  value={currentSelectedVariantId || ''}
+                  value={data.selectedVariantId || ''}
                 >
-                  {currentData.product.variants.map(variant => (
+                  {data.product.variants.map((variant: Variant) => (
                     <option key={variant._id} value={variant._id}>
                       {variant.name}
                     </option>
@@ -541,7 +481,7 @@ export default function ProductDetail() {
 
                 alert(
                   `Order Summary:\n\n` +
-                  `Product: ${currentData.product!.name} (${selectedVariant.name})\n` +
+                  `Product: ${data.product!.name} (${selectedVariant.name})\n` +
                   `Price: ₹${selectedVariant.price.toLocaleString()}\n\n` +
                   `Downpayment: ₹${downpayment.toLocaleString()}\n` +
                   `Finance Amount: ₹${getFinanceAmount().toLocaleString()}\n\n` +
